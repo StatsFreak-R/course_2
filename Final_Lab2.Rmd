@@ -1,0 +1,1916 @@
+---
+title: "Course2_Final_Project"
+author: "Melissinos Melissinos"
+date: "2025-01-11"
+output: 
+  github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Setup
+
+```{r load-packages, message = FALSE}
+library(ggplot2)
+library(dplyr)
+library(statsr)
+library(scales)
+library(tidyr)
+library(reshape2)
+library(extrafont)
+library(cowplot)
+library(gridExtra)
+loadfonts(device = "win") 
+loadfonts(device = "pdf")
+```
+
+```{r load-data}
+load("gss.Rdata")
+```
+
+* * *
+## Description of sampling method
+
+
+The dataset spans from 1972 to 2012 and includes observations collected using a multi-stage area probability sampling method, which is a type of random sampling.
+
+Stages of the Sampling Process:
+
+Selection of Primary Sampling Units (PSUs):
+
+Definition: PSUs are large geographic areas like Standard Metropolitan Statistical Areas (SMSAs) or non-metropolitan counties.
+
+Random Selection: PSUs were randomly selected from the National Opinion Research Center’s (NORC) Master Sample.
+
+Stratification: Before selection, PSUs were stratified based on region, age, and race to ensure diverse coverage.
+
+Selection of Secondary Sampling Units:
+
+Block Groups (BGs) and Enumeration Districts (EDs): Within each selected PSU, BGs and EDs were randomly selected.
+
+Stratification: These units were further stratified by race and income to enhance representativeness.
+
+Selection of Blocks:
+
+Probability Proportional to Size (PPS): Blocks within the selected BGs and EDs were selected using PPS sampling.
+
+Purpose: Ensures areas with larger populations are proportionally represented.
+
+Selection of Households and Respondents:
+
+1972-1976: Quota Sampling at the Block Level
+
+Method: Within selected blocks, interviewers used quota sampling based on sex, age, and employment status.
+
+Purpose: Quotas ensured specific demographic proportions were met.
+
+1977-2012: Full Probability Sampling
+
+Method: Transitioned to full probability sampling without quota sampling.
+
+Random Selection: Households and respondents were randomly selected within blocks.
+
+Improvement: Enhanced randomness and representativeness.
+
+Combination of Multiple Samples:
+
+Integration Over Time: The sample includes observations from multiple surveys conducted annually or biennially over four decades. Each year’s data was collected using the appropriate sampling method for that period.
+
+Purpose: Combining data from multiple years allows for longitudinal analysis and studying social trends.
+
+* * *
+## Generalizability
+
+2. Decision on Generalizability to the US Population
+Generalizability:
+
+Comprehensive Representation: The use of multi-stage random sampling with stratification enhances representativeness. Combining multiple samples increases dataset diversity and size.
+
+Temporal Coverage: Data spanning 40 years provides insights into long-term trends.
+
+Conclusion on Generalizability: Yes, the results can be generalized to the U.S. adult household population, but with caution due to potential biases and changes over time.
+
+* * *
+## Bias
+
+3. Potential Sources of Bias and Their Effects on Conclusions
+Potential Biases:
+
+Quota Sampling Bias (1972-1976):
+
+Issue: Introduced selection bias as interviewers might select more accessible respondents within quotas.
+
+Impact: Affects representativeness in those years.
+
+Conclusion: Minimal impact but requires caution when interpreting data from those years.
+
+Non-Response Bias:
+
+Issue: Underrepresentation of individuals not home during interview times.
+
+Impact: Affects estimates for certain subpopulations.
+
+Conclusion: Efforts to reduce bias were made, but some may remain.
+
+Coverage Bias:
+
+Issue: Only included English-speaking respondents until 2006, excluding non-English speakers.
+
+Impact: Limits generalizability to non-English-speaking populations.
+
+Conclusion: Inclusion of Spanish speakers from 2006 improved representativeness.
+
+* * *
+## Causality
+
+4. Explanation of Causality
+Causality:
+
+Data Collection Method and Its Implications on Causality:
+
+Observational Study Design: The GSS collects observational data through interviews without experimental manipulation.
+
+No Random Assignment to Treatments: Participants were not assigned to different conditions or treatments.
+
+Implications:
+
+Associations, Not Causation: Allows for analysis of correlations and associations between variables.
+
+Confounding Variables: External factors may influence observed relationships.
+
+Conclusion on Causality: No, causality cannot be inferred from this data. The observational nature and lack of random assignment mean that causality cannot be established; only associations can be identified. Researchers should focus on patterns and associations rather than cause-and-effect relationships.
+
+
+* * *
+## Summary
+
+Sampling Method: Described the multi-stage area probability sampling method, highlighting random sampling at each stage, and noted the evolution from quota sampling to full probability sampling.
+
+Generalizability: Concluded that the results can be generalized to the U.S. adult household population, with caution due to potential biases and changes over time.
+
+Biases: Discussed potential biases, including quota sampling bias (1972-1976), non-response and coverage biases, which necessitate caution and appropriate adjustments when interpreting the results.
+
+Causality: Determined that no random assignment to treatments was used, and therefore, causality cannot be inferred from the data.
+
+* * *
+## Research Question
+
+How has public confidence in institutions changed across the decades from the 1970s to the 2000s, and what associations exist between this confidence and various societal concerns during these periods?
+
+* * *
+## Personal touch
+
+This question is based on my curiosity to find any associations between the different decades and understand how the confidence of US society evolved through the years.
+
+
+* * *
+## Exploratory Data Analysis
+
+```{r intro, eval=FALSE, message=TRUE, warning=TRUE, include=FALSE}
+
+###EDA
+
+
+# Get a summary of your data
+summary(gss)
+
+# Check for missing values
+colSums(is.na(gss))
+```
+
+```{r clean, echo=FALSE, message=TRUE, warning=TRUE}
+# Select the relevant columns and exclude rows with missing values
+selected_columns <- c("caseid", "year", "confinan", "conbus", "conclerg", "coneduc", "confed", "conlabor", "conpress", "conmedic", "contv", "conjudge", "consci", "conlegis", "conarmy")
+gss_clean <- gss %>%
+  select(all_of(selected_columns)) %>%
+  na.omit()
+```
+
+```{r decade, message=TRUE, warning=TRUE, include=FALSE}
+
+# Create datasets for each decade
+gss_70 <- gss_clean %>% filter(year >= 1970 & year < 1980)
+gss_80 <- gss_clean %>% filter(year >= 1980 & year < 1990)
+gss_90 <- gss_clean %>% filter(year >= 1990 & year < 2000)
+gss_00 <- gss_clean %>% filter(year >= 2000 & year < 2010)
+```
+* * *
+The following tables summarize the answers of americans about their confidence in various institutions in 1970s.
+
+```{r summary_1970s, echo=FALSE, message=FALSE, warning=FALSE}
+# Summary of data per decade
+summary(gss_70[, !names(gss_70) %in% c("caseid", "year")])
+```
+* * *
+The following tables summarize the answers of americans about their confidence in various institutions in 1980s.
+
+```{r summary_1980s, echo=FALSE, message=FALSE, warning=FALSE}
+# Summary of data per decade
+summary(gss_80[, !names(gss_80) %in% c("caseid", "year")])
+```
+
+* * *
+The following tables summarize the answers of americans about their confidence in various institutions in 1990s.
+
+```{r summary_1990s, echo=FALSE, message=FALSE, warning=FALSE}
+# Summary of data per decade
+summary(gss_90[, !names(gss_90) %in% c("caseid", "year")])
+```
+
+* * *
+The following tables summarize the answers of americans about their confidence in various institutions in 2000s.
+
+```{r summary_2000s, echo=FALSE, message=FALSE, warning=FALSE}
+# Summary of data per decade
+summary(gss_00[, !names(gss_00) %in% c("caseid", "year")])
+```
+
+```{r function_for_bar_plot, message=FALSE, warning=FALSE, include=FALSE}
+
+# Function to create bar plot
+create_bar_plot <- function(data, variable, title) {
+  # Convert variable to symbol for use in dplyr
+  var_sym <- sym(variable)
+  
+  # Calculate proportions for the given variable
+  data_prop <- data %>%
+    group_by(!!var_sym) %>%
+    summarize(count = n()) %>%
+    mutate(prop = count / sum(count))
+  
+  # Create the bar plot
+  ggplot(data_prop, aes(x = !!var_sym, y = prop, fill = !!var_sym)) + 
+    geom_bar(stat = "identity", color = "black") +
+    geom_text(aes(label = !!var_sym), vjust = 1.5, color = "white",size=1.5)+
+    
+    geom_text(aes(label = percent(prop, accuracy = 0.01)), vjust= -1, color = "black", size=2) +
+    labs(title = title, x = NULL, y = "Proportion") + 
+    scale_fill_manual(values = c("A Great Deal" = "green", "Only Some" = "blue", "Hardly Any" = "red")) + 
+    theme_void() +
+    theme(
+      panel.background = element_rect(fill = "lightgrey", color = NA), 
+      plot.background = element_rect(fill = "lightgrey", color = NA), 
+      plot.margin = margin(t = 10, r = 10, b = 10, l = 10),
+      text = element_text(size = 6),
+      plot.title = element_text(hjust = 0.5, vjust = 5),
+      legend.position = "none"
+    )
+    
+}
+
+
+```
+
+```{r plot_70, message=FALSE, warning=FALSE, include=FALSE}
+plot1 <- create_bar_plot(gss_70, "confinan", "Banks and Financial Institutions")
+plot2 <- create_bar_plot(gss_70, "conbus", "Major Companies")
+plot3 <- create_bar_plot(gss_70, "conclerg", "Organized Religion")
+plot4 <- create_bar_plot(gss_70, "coneduc", " Education")
+plot5 <- create_bar_plot(gss_70, "confed", "Executive Branch of Fed Gov ")
+plot6 <- create_bar_plot(gss_70, "conlabor", "Organized Labor")
+plot7 <- create_bar_plot(gss_70, "conpress", "Press")
+plot8 <- create_bar_plot(gss_70, "conmedic", "Medicine")
+plot9 <- create_bar_plot(gss_70, "contv", "Television")
+plot10 <- create_bar_plot(gss_70, "conjudge", "Supreme Court")
+plot11 <- create_bar_plot(gss_70, "consci", "Scientific Community ")
+plot12 <- create_bar_plot(gss_70, "conlegis", "Congress")
+plot13 <- create_bar_plot(gss_70, "conarmy", "Military")
+```
+
+* * *
+### Bar Plots
+
+The following Bar plots show the proportion of each answer in the 1970s.
+
+```{r barplot_70, echo=FALSE, message=TRUE, warning=FALSE}
+grid.arrange(plot1, plot2, plot3, plot4, ncol = 4)
+grid.arrange(plot5, plot6, plot7, plot8, ncol = 4)  
+grid.arrange(plot9, plot10, plot11, plot12, ncol = 4)  
+grid.arrange(plot13, ncol=4)
+```
+
+```{r plot_80, message=FALSE, warning=FALSE, include=FALSE}
+plot1_2 <- create_bar_plot(gss_80, "confinan", "Banks and Financial Institutions")
+plot2_2 <- create_bar_plot(gss_80, "conbus", "Major Companies")
+plot3_2 <- create_bar_plot(gss_80, "conclerg", "Organized Religion ")
+plot4_2 <- create_bar_plot(gss_80, "coneduc", "Education")
+plot5_2 <- create_bar_plot(gss_80, "confed", "Executive Branch of Fed Gov")
+plot6_2 <- create_bar_plot(gss_80, "conlabor", "Organized Labor")
+plot7_2 <- create_bar_plot(gss_80, "conpress", "Press")
+plot8_2 <- create_bar_plot(gss_80, "conmedic", "Medicine")
+plot9_2 <- create_bar_plot(gss_80, "contv", "Television")
+plot10_2 <- create_bar_plot(gss_80, "conjudge", "Supreme Court")
+plot11_2 <- create_bar_plot(gss_80, "consci", " Scientific Community")
+plot12_2 <- create_bar_plot(gss_80, "conlegis", "Congress")
+plot13_2 <- create_bar_plot(gss_80, "conarmy", "Military")
+```
+
+* * *
+The following Bar plots show the proportion of each answer in the 1980s.
+
+```{r barplot_80, echo=FALSE, message=TRUE, warning=FALSE}
+grid.arrange(plot1_2, plot2_2, plot3_2, plot4_2, ncol = 4)
+grid.arrange(plot5_2, plot6_2, plot7_2, plot8_2, ncol = 4)  
+grid.arrange(plot9_2, plot10_2, plot11_2, plot12_2, ncol = 4)  
+grid.arrange(plot13_2, ncol=4)
+```
+
+```{r plot_90, message=FALSE, warning=FALSE, include=FALSE}
+plot1_3 <- create_bar_plot(gss_90, "confinan", "Banks and Financial Institutions")
+plot2_3 <- create_bar_plot(gss_90, "conbus", "Major Companies")
+plot3_3 <- create_bar_plot(gss_90, "conclerg", "Organized Religion")
+plot4_3 <- create_bar_plot(gss_90, "coneduc", "Education")
+plot5_3 <- create_bar_plot(gss_90, "confed", "Executive Branch of Fed Gov")
+plot6_3 <- create_bar_plot(gss_90, "conlabor", "Organized Labor")
+plot7_3 <- create_bar_plot(gss_90, "conpress", "Press")
+plot8_3 <- create_bar_plot(gss_90, "conmedic", "Medicine")
+plot9_3 <- create_bar_plot(gss_90, "contv", "Television")
+plot10_3 <- create_bar_plot(gss_90, "conjudge", "Supreme Court")
+plot11_3 <- create_bar_plot(gss_90, "consci", "Scientific Community")
+plot12_3 <- create_bar_plot(gss_90, "conlegis", "Congress")
+plot13_3 <- create_bar_plot(gss_90, "conarmy", "Military")
+```
+* * *
+The following Bar plots show the proportion of each answer in the 1990s.
+
+```{r barplot_90, echo=FALSE, message=TRUE, warning=FALSE}
+grid.arrange(plot1_3, plot2_3, plot3_3, plot4_3, ncol = 4)
+grid.arrange(plot5_3, plot6_3, plot7_3, plot8_3, ncol = 4)  
+grid.arrange(plot9_3, plot10_3, plot11_3, plot12_3, ncol = 4)  
+grid.arrange(plot13_3, ncol=4)
+```
+
+```{r plot_00, message=FALSE, warning=FALSE, include=FALSE}
+plot1_4 <- create_bar_plot(gss_00, "confinan", "Banks and Financial Institutions")
+plot2_4 <- create_bar_plot(gss_00, "conbus", "Major Companies")
+plot3_4 <- create_bar_plot(gss_00, "conclerg", "Organized Religion ")
+plot4_4 <- create_bar_plot(gss_00, "coneduc", "Education")
+plot5_4 <- create_bar_plot(gss_00, "confed", "Executive Branch of Fed Gov")
+plot6_4 <- create_bar_plot(gss_00, "conlabor", "Organized Labor")
+plot7_4 <- create_bar_plot(gss_00, "conpress", "Press")
+plot8_4 <- create_bar_plot(gss_00, "conmedic", "Medicine")
+plot9_4 <- create_bar_plot(gss_00, "contv", "Television")
+plot10_4 <- create_bar_plot(gss_00, "conjudge", "Supreme Court")
+plot11_4 <- create_bar_plot(gss_00, "consci", "Scientific Communitys")
+plot12_4 <- create_bar_plot(gss_00, "conlegis", "Congress")
+plot13_4 <- create_bar_plot(gss_00, "conarmy", "Military")
+```
+* * *
+The following Bar plots show the proportion of each answer in the 2000s.
+
+```{r barplot_00, echo=FALSE, message=TRUE, warning=FALSE}
+grid.arrange(plot1_4, plot2_4, plot3_4, plot4_4, ncol = 4)
+grid.arrange(plot5_4, plot6_4, plot7_4, plot8_4, ncol = 4)  
+grid.arrange(plot9_4, plot10_4, plot11_4, plot12_4, ncol = 4)  
+grid.arrange(plot13_4, ncol=4)
+```
+
+```{r decade_identifiers, message=FALSE, warning=FALSE, include=FALSE}
+# Add decade identifiers based on the 'year' column
+gss_70 <- gss_70 %>%
+  mutate(decade = ifelse(year >= 1970 & year < 1980, "1970s", year))
+
+gss_80 <- gss_80 %>%
+  mutate(decade = ifelse(year >= 1980 & year < 1990, "1980s", year))
+
+gss_90 <- gss_90 %>%
+  mutate(decade = ifelse(year >= 1990 & year < 2000, "1990s", year))
+
+gss_00 <- gss_00 %>%
+  mutate(decade = ifelse(year >= 2000 & year < 2010, "2000s", year))
+```
+
+```{r combine_datasets, message=FALSE, warning=FALSE, include=FALSE}
+# Combine all datasets into one data frame
+combined_data <- bind_rows(gss_70, gss_80, gss_90, gss_00)
+```
+
+```{r propotions_function, message=FALSE, warning=FALSE, include=FALSE}
+# Function for proportions
+find_prop <- function(data, variable) {
+  # Convert variable to symbol for use in dplyr
+  var_sym_prop <- sym(variable)
+  
+  # Calculate proportions for the given variable
+  data_prop <- data %>%
+    group_by(!!var_sym_prop) %>%
+    summarize(count = n()) %>%
+    mutate(prop = count / sum(count))
+  
+  data_prop
+}
+```
+
+```{r list_of_datasets, message=FALSE, warning=FALSE, include=FALSE}
+# List of datasets with decade identifiers 
+datasets <- list( "1970s" = gss_70, "1980s" = gss_80, "1990s" = gss_90, "2000s" = gss_00 )
+```
+
+```{r list_of_variables, message=FALSE, warning=FALSE, include=FALSE}
+# List of variables 
+variables <- c("confinan", "conbus", "conclerg", "coneduc", "confed", "conlabor", "conpress", "conmedic", "contv", "conjudge", "consci", "conlegis", "conarmy")
+```
+
+```{r function_for_prop_table_per_variable_per_decade, message=FALSE, warning=FALSE, include=FALSE}
+## Function to process each dataset for a given variable and return proportion tables
+process_variable_proportions <- function(variable, datasets) {
+  results <- list()
+  
+  for (decade in names(datasets)) {
+    proportion_data <- find_prop(datasets[[decade]], variable)
+    proportion_data$decade <- decade
+    results[[decade]] <- proportion_data
+  }
+  
+  combined_proportions <- bind_rows(results)
+  return(combined_proportions)
+}
+```
+
+```{r prop_table_per_variable_per_decade, message=FALSE, warning=FALSE, include=FALSE}
+# Process the variables 'con' across the datasets
+combined_prop_confinan <- process_variable_proportions("confinan", datasets)
+combined_prop_conbus <- process_variable_proportions("conbus", datasets)
+combined_prop_conclerg <- process_variable_proportions("conclerg", datasets)
+combined_prop_coneduc <- process_variable_proportions("coneduc", datasets)
+combined_prop_confed <- process_variable_proportions("confed", datasets)
+combined_prop_conlabor <- process_variable_proportions("conlabor", datasets)
+combined_prop_conpress <- process_variable_proportions("conpress", datasets)
+combined_prop_conmedic <- process_variable_proportions("conmedic", datasets)
+combined_prop_contv <- process_variable_proportions("contv", datasets)
+combined_prop_conjudge <- process_variable_proportions("conjudge", datasets)
+combined_prop_consci <- process_variable_proportions("consci", datasets)
+combined_prop_conlegis <- process_variable_proportions("conlegis", datasets)
+combined_prop_conarmy <- process_variable_proportions("conarmy", datasets)
+```
+
+```{r function_for_Heatmap_per_variable_perd_decade, message=FALSE, warning=FALSE, include=FALSE}
+# Function to create a heatmap from a given table 
+create_heatmap <- function(data, variable, decade_column = "decade", proportion_column = "prop") { 
+ggplot(data, aes_string(x = decade_column, y = variable, fill = proportion_column)) + 
+geom_tile() + 
+scale_fill_gradient(low = "blue", high = "red", name = "Proportion") + 
+labs(title = paste("Heatmap of", variable, "Proportions Across Decades"), x = "Decade", y = variable) + theme_minimal() + 
+theme(plot.title = element_text(hjust = 0.5, size = 10)) }
+```
+
+```{r Heatmap_per_variable_perd_decade, message=FALSE, warning=FALSE, include=FALSE}
+heatmap1 <- create_heatmap(combined_prop_confinan, "confinan")
+heatmap2 <- create_heatmap(combined_prop_conbus, "conbus")
+heatmap3 <- create_heatmap(combined_prop_conclerg, "conclerg")
+heatmap4 <- create_heatmap(combined_prop_coneduc, "coneduc")
+heatmap5 <- create_heatmap(combined_prop_confed, "confed")
+heatmap6 <- create_heatmap(combined_prop_conlabor, "conlabor")
+heatmap7 <- create_heatmap(combined_prop_conpress, "conpress")
+heatmap8 <- create_heatmap(combined_prop_conmedic, "conmedic")
+heatmap9 <- create_heatmap(combined_prop_contv, "contv")
+heatmap10 <- create_heatmap(combined_prop_conjudge, "conjudge")
+heatmap11 <- create_heatmap(combined_prop_consci, "consci")
+heatmap12 <- create_heatmap(combined_prop_conlegis, "conlegis")
+heatmap13 <- create_heatmap(combined_prop_conarmy, "conarmy")
+```
+
+* * *
+### Heat Maps
+
+The following Heat maps show the change in proportions of each answer in every Institution through the decades. At the end follows a table with description of every variable.
+
+```{r Heatmap_per_variable_perd_decade_complete, echo=FALSE, message=FALSE, warning=FALSE}
+grid.arrange(heatmap1,heatmap2,heatmap3, ncol = 1)
+grid.arrange(heatmap4,heatmap5,heatmap6, ncol = 1)  
+grid.arrange(heatmap7,heatmap8,heatmap9, ncol = 1)  
+grid.arrange(heatmap10,heatmap11,heatmap12, ncol = 1)
+grid.arrange(heatmap13, ncol = 1)
+```
+
+* * *
+Confidence in Institutions  
+confinan: confidence in banks and financial institutions  
+conbus: confidence in major companies  
+conclerg: confidence in organized religion  
+coneduc: confidence in education  
+confed: confidence in executive branch of federal government  
+conlabor: confidence in organized labor  
+conpress: confidence in press  
+conmedic: confidence in medicine  
+contv: confidence in television  
+conjudge: confidence in United States Supreme Court   
+consci: confidence in scientific community  
+conlegis: confidence in Congress  
+conarmy: confidence in military  
+
+
+* * *
+### Bar Plots Interpretations
+
+
+#### Interpretation of Bar Plots on Confidence in Banks and Financial Institutions(1970s to 2000s)
+
+
+The bar plots provide a visual representation of the levels of public confidence in banks and financial institutions over four decades: the 1970s, 1980s, 1990s, and 2000s.
+
+Confidence Levels:
+Each bar represents the proportion of respondents expressing different levels of confidence: "A Great Deal," "Only Some," and "Hardly Any."
+
+High Confidence ("A Great Deal"):
+
+1970s: Approximately 36.89% of respondents had a high level of confidence in banks and financial institutions.
+
+1980s: The proportion decreased to 25.45%.
+
+1990s: Further decrease to 19.61%.
+
+2000s: Slight increase to 26.66%.
+
+Moderate Confidence ("Only Some"):
+
+1970s: Around 52.71% of respondents expressed moderate confidence.
+
+1980s: The proportion increased to 58.70%.
+
+1990s: The percentage remained relatively stable at 58.59%.
+
+2000s: Slight decrease to 57.27%.
+
+Low Confidence ("Hardly Any"):
+
+1970s: Approximately 10.40% of respondents reported low confidence.
+
+1980s: The proportion increased to 15.85%.
+
+1990s: Further increase to 21.80%.
+
+2000s: Slight decrease to 16.07%.
+
+Key Observations:
+Decline in High Confidence: There is a noticeable decline in the proportion of respondents with high confidence in banks and financial institutions from the 1970s (36.89%) to the 1990s (19.61%), with a slight recovery in the 2000s (26.66%).
+
+Stability in Moderate Confidence: Moderate confidence has remained the most common response across all decades, showing slight fluctuations but staying around 52-58%.
+
+Increase in Low Confidence: There is a clear upward trend in the proportion of respondents with low confidence, rising from 10.40% in the 1970s to 21.80% in the 1990s, followed by a slight decrease in the 2000s (16.07%). 
+
+* * *
+#### Interpretation of Bar Plots on Confidence in Major Companies Institutionss (1970s to 2000s)
+
+The bar plots provide a visual representation of the levels of public confidence in major companies over four decades: the 1970s, 1980s, 1990s, and 2000s.
+
+Confidence Levels:
+Each bar represents the proportion of respondents expressing different levels of confidence: "A Great Deal," "Only Some," and "Hardly Any."
+
+High Confidence ("A Great Deal"):
+
+1970s: Approximately 24.26% of respondents had a high level of confidence in major companies (43 individuals).
+
+1980s: The proportion slightly increased to 26.74% (82 individuals).
+
+1990s: There was a slight decrease to 25.60% (121 individuals).
+
+2000s: Further decrease to 20.47% (5 individuals).
+
+Moderate Confidence ("Only Some"):
+
+1970s: Around 58.80% of respondents expressed moderate confidence (44 individuals).
+
+1980s: The proportion increased to 61.81% (83 individuals).
+
+1990s: Slight increase to 62.55% (122 individuals).
+
+2000s: Continued increase to 63.06% (6 individuals).
+
+Low Confidence ("Hardly Any"):
+
+1970s: Approximately 16.93% of respondents reported low confidence (45 individuals).
+
+1980s: The proportion decreased to 11.45% (84 individuals).
+
+1990s: Slight increase to 11.85% (123 individuals).
+
+2000s: Increase to 16.47% (7 individuals).
+
+Key Observations:
+Fluctuations in High Confidence: The proportion of respondents with high confidence in major companies saw a slight increase from the 1970s (24.26%) to the 1980s (26.74%), followed by a decrease in the 1990s (25.60%) and a further decline in the 2000s (20.47%).
+
+Consistent Moderate Confidence: Moderate confidence has consistently been the most common response, showing a steady increase from 58.80% in the 1970s to 63.06% in the 2000s.
+
+Fluctuations in Low Confidence: There is a slight decrease in low confidence from the 1970s (16.93%) to the 1980s (11.45%), followed by an increase in the 1990s (11.85%) and a further increase in the 2000s (16.47%).
+
+* * *
+#### Interpretation of Bar Plots on Confidence in Organized Religions (1970s to 2000s)
+
+
+The bar plots depict the proportions of respondents expressing different levels of confidence in educational institutions across four decades: the 1970s, 1980s, 1990s, and 2000s.
+
+Low Confidence ("Hardly Any"):
+
+1970s: Approximately 17.63% of respondents expressed low confidence.
+
+1980s: The proportion increased to 20.55%.
+
+1990s: Further increase to 21.71%.
+
+2000s: Slight increase to 22.71%.
+
+Moderate Confidence ("Only Some"):
+
+1970s: Around 49.54% of respondents had moderate confidence.
+
+1980s: Slight increase to 51.11%.
+
+1990s: The proportion increased to 53.56%.
+
+2000s: The percentage remained stable at approximately 53.49%.
+
+High Confidence ("A Great Deal"):
+
+1970s: Approximately 32.84% of respondents expressed high confidence.
+
+1980s: Decreased to 28.34%.
+
+1990s: Further decrease to 24.73%.
+
+2000s: A slight decrease to 23.80%.
+
+Key Observations:
+Decline in High Confidence: There is a noticeable decline in the proportion of respondents with high confidence in Organized Religion from the 1970s (32.84%) to the 2000s (23.80%).
+
+Increase in Low Confidence: The proportion of respondents with low confidence has increased steadily from the 1970s (17.63%) to the 2000s (22.71%).
+
+Stable Moderate Confidence: Moderate confidence has remained the dominant response across all decades, ranging from 49.54% in the 1970s to 53.49% in the 2000s.
+
+* * *
+#### Interpretation of Bar Plots on Confidence in Education System (1970s to 2000s)
+The bar plots provide a visual representation of the levels of public confidence in the education system over four decades: the 1970s, 1980s, 1990s, and 2000s.  
+
+Confidence Levels:
+Each bar represents the proportion of respondents expressing different levels of confidence: "A Great Deal," "Only Some," and "Hardly Any."
+
+High Confidence ("A Great Deal"):
+
+1970s: Approximately 34.94% of respondents had a high level of confidence in educational institutions.
+
+1980s: The proportion decreased slightly to 31.21%.
+
+1990s: Further decrease to 24.91%.
+
+2000s: A minor recovery to 27.17%.
+
+Moderate Confidence ("Only Some"):
+
+1970s: Around 52.94% of respondents expressed moderate confidence.
+
+1980s: The proportion increased to 57.87%.
+
+1990s: A slight increase to 58.40%.
+
+2000s: The percentage remained stable at approximately 57.84%.
+
+Low Confidence ("Hardly Any"):
+
+1970s: Approximately 12.12% of respondents reported low confidence.
+
+1980s: The proportion decreased slightly to 10.92%.
+
+1990s: A notable increase to 16.69%.
+
+2000s: Slight decrease to 14.98%.
+
+Key Observations:
+Decline in High Confidence: There is a clear decline in the proportion of respondents with high confidence in educational system from the 1970s (34.94%) to the 1990s (24.91%), followed by a slight recovery in the 2000s (27.17%).
+
+Increase in Moderate Confidence: Moderate confidence has seen a gradual increase from 52.94% in the 1970s to around 58.40% in the 1990s, remaining stable in the 2000s.
+
+Fluctuations in Low Confidence: The proportion of respondents with low confidence decreased from the 1970s (12.12%) to the 1980s (10.92%), but then saw an increase in the 1990s (16.69%), followed by a slight decrease in the 2000s (14.98%).
+
+* * *
+#### Interpretation of Bar Plots on Confidence in Executive branch of Federal Goverment (1970s to 2000s)
+
+The bar plots provide a visual representation of the levels of public confidence in the executive branch of the federal government over four decades: the 1970s, 1980s, 1990s, and 2000s.
+
+Confidence Levels:
+Each bar represents the proportion of respondents expressing different levels of confidence: "A Great Deal," "Only Some," and "Hardly Any."
+
+High Confidence ("A Great Deal"):
+
+1970s: Approximately 17.33% of respondents had a high level of confidence in the executive branch.
+
+1980s: The proportion remained relatively stable at 17.12%.
+
+1990s: A slight decrease to 14.64%.
+
+2000s: A minor recovery to 15.88%.
+
+Moderate Confidence ("Only Some"):
+
+1970s: Around 60.13% of respondents expressed moderate confidence.
+
+1980s: The proportion decreased to 54.59%.
+
+1990s: Further decrease to 50.84%.
+
+2000s: Continued decrease to 48.46%.
+
+Low Confidence ("Hardly Any"):
+
+1970s: Approximately 22.54% of respondents reported low confidence.
+
+1980s: The proportion increased to 28.29%.
+
+1990s: A significant increase to 34.51%.
+
+2000s: Further increase to 35.65%.
+
+Key Observations:
+Stability and Decline in High Confidence: The proportion of respondents with high confidence in the executive branch remained stable around 17% from the 1970s to the 1980s, followed by a decline in the 1990s (14.64%) and a minor recovery in the 2000s (15.88%).
+
+Gradual Decrease in Moderate Confidence: Moderate confidence shows a steady decline from 60.13% in the 1970s to 48.46% in the 2000s, indicating a growing dissatisfaction over the decades.
+
+Increase in Low Confidence: There is a noticeable increase in the proportion of respondents with low confidence, rising from 22.54% in the 1970s to 35.65% in the 2000s, reflecting a growing lack of trust in the executive branch.
+
+* * *
+#### Interpretation of Bar Plots on Confidence in Organized Labor (1970s to 2000s)
+
+The bar plots provide a visual representation of the levels of public confidence in organized labor over four decades: the 1970s, 1980s, 1990s, and 2000s.
+
+Confidence Levels:
+Each bar represents the proportion of respondents expressing different levels of confidence: "A Great Deal," "Only Some," and "Hardly Any."
+
+High Confidence ("A Great Deal"):
+
+1970s: Approximately 12.23% of respondents had a high level of confidence in organized labor.
+
+1980s: The proportion decreased slightly to 10.86%.
+
+1990s: The percentage remained relatively stable at 10.71%.
+
+2000s: A minor increase to 12.39%.
+
+Moderate Confidence ("Only Some"):
+
+1970s: Around 53.91% of respondents expressed moderate confidence.
+
+1980s: The proportion remained stable at 54.45%.
+
+1990s: Increased slightly to 55.84%.
+
+2000s: The percentage increased further to 59.20%.
+
+Low Confidence ("Hardly Any"):
+
+1970s: Approximately 33.87% of respondents reported low confidence.
+
+1980s: The proportion increased slightly to 34.69%.
+
+1990s: A slight decrease to 33.45%.
+
+2000s: Decreased further to 28.41%.
+
+Key Observations:
+Stability in High Confidence: The proportion of respondents with high confidence in organized labor remained relatively stable around 10-12% across the decades, with a slight increase in the 2000s.
+
+Consistent Moderate Confidence: Moderate confidence has consistently been the dominant response, ranging from 53.91% in the 1970s to 59.20% in the 2000s, indicating stable and gradually increasing moderate trust.
+
+Fluctuations in Low Confidence: There is a notable decrease in low confidence from the 1970s (33.87%) to the 2000s (28.41%), reflecting a slight improvement in public perception of organized labor.
+
+These observations provide a detailed view of how public confidence in organized labor has evolved over the decades, highlighting key trends and shifts in public opinion.
+
+* * *
+#### Interpretation of Bar Plots on Confidence in Press (1970s to 2000s)
+
+The bar plots provide a visual representation of the levels of public confidence in the press over four decades: the 1970s, 1980s, 1990s, and 2000s.
+
+Confidence Levels:
+Each bar represents the proportion of respondents expressing different levels of confidence: "A Great Deal," "Only Some," and "Hardly Any."
+
+High Confidence ("A Great Deal"):
+
+1970s: Approximately 25.48% of respondents had a high level of confidence in the press.
+
+1980s: The proportion decreased to 18.43%.
+
+1990s: Further decrease to 11.22%.
+
+2000s: Continued decline to 9.77%.
+
+Moderate Confidence ("Only Some"):
+
+1970s: Around 57.29% of respondents expressed moderate confidence.
+
+1980s: The proportion remained stable at 59.08%.
+
+1990s: Decreased to 50.93%.
+
+2000s: Continued decrease to 47.24%.
+
+Low Confidence ("Hardly Any"):
+
+1970s: Approximately 17.23% of respondents reported low confidence.
+
+1980s: The proportion increased to 22.48%.
+
+1990s: Significant increase to 37.85%.
+
+2000s: Further increase to 42.99%.
+
+Key Observations:
+Decline in High Confidence: There is a noticeable decline in the proportion of respondents with high confidence in the press from the 1970s (25.48%) to the 2000s (9.77%).
+
+Fluctuations in Moderate Confidence: Moderate confidence remained relatively stable in the 1970s and 1980s (around 57-59%), but saw a significant decrease in the 1990s (50.93%) and continued to decline in the 2000s (47.24%).
+
+Increase in Low Confidence: There is a clear upward trend in the proportion of respondents with low confidence, rising from 17.23% in the 1970s to 42.99% in the 2000s, indicating growing public skepticism towards the press over the decades.
+
+* * *
+#### Interpretation of Bar Plots on Confidence in Medicine (1970s to 2000s)
+
+The bar plots provide a visual representation of the levels of public confidence in medicine over four decades: the 1970s, 1980s, 1990s, and 2000s.
+
+Confidence Levels:
+Each bar represents the proportion of respondents expressing different levels of confidence: "A Great Deal," "Only Some," and "Hardly Any."
+
+High Confidence ("A Great Deal"):
+
+1970s: Approximately 51.68% of respondents had a high level of confidence in medicine.
+
+1980s: The proportion remained relatively stable at 50.12%.
+
+1990s: There was a notable decrease to 43.76%.
+
+2000s: Continued decline to 39.62%.
+
+Moderate Confidence ("Only Some"):
+
+1970s: Around 40.99% of respondents expressed moderate confidence.
+
+1980s: The proportion slightly increased to 43.52%.
+
+1990s: The percentage further increased to 47.88%.
+
+2000s: Continued increase to 49.43%.
+
+Low Confidence ("Hardly Any"):
+
+1970s: Approximately 7.33% of respondents reported low confidence.
+
+1980s: The proportion decreased slightly to 6.36%.
+
+1990s: A slight increase to 8.36%.
+
+2000s: Continued increase to 10.95%.
+
+Key Observations:
+Decline in High Confidence: There is a noticeable decline in the proportion of respondents with high confidence in medicine from the 1970s (51.68%) to the 2000s (39.62%).
+
+Gradual Increase in Moderate Confidence: Moderate confidence has gradually increased over the decades, rising from 40.99% in the 1970s to 49.43% in the 2000s.
+
+Fluctuations in Low Confidence: While low confidence was relatively low in the 1970s and 1980s, it has seen a slight increase in the 1990s and 2000s, indicating a growing segment of the population with diminished confidence in medicine.
+
+* * *
+#### Interpretation of Bar Plots on Confidence in Television (1970s to 2000s)
+
+The bar plots provide a visual representation of the levels of public confidence in television over four decades: the 1970s, 1980s, 1990s, and 2000s.
+
+Confidence Levels:
+Each bar represents the proportion of respondents expressing different levels of confidence: "A Great Deal," "Only Some," and "Hardly Any."
+
+High Confidence ("A Great Deal"):
+
+1970s: Approximately 17.16% of respondents had a high level of confidence in television.
+
+1980s: The proportion decreased to 13.49%.
+
+1990s: Further decrease to 10.32%.
+
+2000s: Continued decline to 9.35%.
+
+Moderate Confidence ("Only Some"):
+
+1970s: Around 56.07% of respondents expressed moderate confidence.
+
+1980s: The proportion remained relatively stable at 58.56%.
+
+1990s: Decreased to 51.25%.
+
+2000s: Continued decrease to 48.06%.
+
+Low Confidence ("Hardly Any"):
+
+1970s: Approximately 26.76% of respondents reported low confidence.
+
+1980s: The proportion increased slightly to 27.96%.
+
+1990s: Significant increase to 38.43%.
+
+2000s: Further increase to 42.59%.
+
+Key Observations:
+Decline in High Confidence: There is a noticeable decline in the proportion of respondents with high confidence in television from the 1970s (17.16%) to the 2000s (9.35%).
+
+Fluctuations in Moderate Confidence: Moderate confidence remained relatively stable in the 1970s and 1980s (around 56-58%), but saw a significant decrease in the 1990s (51.25%) and continued to decline in the 2000s (48.06%).
+
+Increase in Low Confidence: There is a clear upward trend in the proportion of respondents with low confidence, rising from 26.76% in the 1970s to 42.59% in the 2000s, indicating growing public skepticism towards television over the decades.
+
+* * *
+#### Interpretation of Bar Plots on Confidence in the Supreme Court (1970s to 2000s)
+
+The bar plots provide a visual representation of the levels of public confidence in the Supreme Court over four decades: the 1970s, 1980s, 1990s, and 2000s.
+
+Confidence Levels:
+Each bar represents the proportion of respondents expressing different levels of confidence: "A Great Deal," "Only Some," and "Hardly Any."
+
+High Confidence ("A Great Deal"):
+
+1970s: Approximately 35.04% of respondents had a high level of confidence in the Supreme Court.
+
+1980s: The proportion slightly decreased to 32.52%.
+
+1990s: There was a slight increase to 33.14%.
+
+2000s: The proportion remained relatively stable at 32.98%.
+
+Moderate Confidence ("Only Some"):
+
+1970s: Around 50.48% of respondents expressed moderate confidence.
+
+1980s: The proportion increased to 54.45%.
+
+1990s: Slight decrease to 51.90%.
+
+2000s: Continued stability with a slight increase to 52.51%.
+
+Low Confidence ("Hardly Any"):
+
+1970s: Approximately 14.47% of respondents reported low confidence.
+
+1980s: The proportion decreased slightly to 13.03%.
+
+1990s: A slight increase to 14.96%.
+
+2000s: The proportion remained relatively stable at.
+
+Key Observations:
+Stability in High Confidence: The proportion of respondents with high confidence in the Supreme Court remained relatively stable around 32-35% across the decades, with minor fluctuations.
+
+Moderate Confidence: Moderate confidence has consistently been the most common response, showing slight fluctuations but remaining around 50-54%.
+
+Low Confidence: There is a slight fluctuation in the proportion of respondents with low confidence, ranging from 13.03% in the 1980s to 14.96% in the 1990s, but overall remaining relatively stable.
+
+* * *
+#### Interpretation of Bar Plots on Confidence in the Scientific Community (1970s to 2000s)
+
+The bar plots provide a visual representation of the levels of public confidence in the scientific community over four decades: the 1970s, 1980s, 1990s, and 2000s.
+
+Confidence Levels:
+Each bar represents the proportion of respondents expressing different levels of confidence: "A Great Deal," "Only Some," and "Hardly Any."
+
+High Confidence ("A Great Deal"):
+
+1970s: Approximately 43.74% of respondents had a high level of confidence in the scientific community.
+
+1980s: The proportion remained stable at 43.74%.
+
+1990s: Slight decrease to 42.04%.
+
+2000s: Minor increase to 42.66%.
+
+Moderate Confidence ("Only Some"):
+
+1970s: Around 49.58% of respondents expressed moderate confidence.
+
+1980s: The proportion remained stable at 49.52%.
+
+1990s: Slight increase to 50.62%.
+
+2000s: Minor decrease to 50.25%.
+
+Low Confidence ("Hardly Any"):
+
+1970s: Approximately 6.68% of respondents reported low confidence.
+
+1980s: The proportion remained stable at 6.74%.
+
+1990s: Slight increase to 7.33%.
+
+2000s: Minor decrease to 7.09%.
+
+Key Observations:
+Stability in High Confidence: The proportion of respondents with high confidence in the scientific community remained relatively stable around 42-44% across the decades.
+
+Consistent Moderate Confidence: Moderate confidence has consistently been the most common response, with slight fluctuations around 49-50%.
+
+Low Confidence: The proportion of respondents with low confidence has remained low and relatively stable, with minor fluctuations from 6.68% in the 1970s to 7.09% in the 2000s.
+
+* * *
+#### Interpretation of Bar Plots on Confidence in Congress (1970s to 2000s)
+
+The bar plots provide a visual representation of the levels of public confidence in Congress over four decades: the 1970s, 1980s, 1990s, and 2000s.
+
+Confidence Levels:
+Each bar represents the proportion of respondents expressing different levels of confidence: "A Great Deal," "Only Some," and "Hardly Any."
+
+High Confidence ("A Great Deal"):
+
+1970s: Approximately 15.29% of respondents had a high level of confidence in Congress .
+
+1980s: The proportion slightly decreased to 13.90%.
+
+1990s: Further decrease to 10.06%.
+
+2000s: Slight recovery to 11.62%.
+
+Moderate Confidence ("Only Some"):
+
+1970s: Around 62.63% of respondents expressed moderate confidence.
+
+1980s: The proportion remained stable at 62.98%.
+
+1990s: Noticeable decrease to 53.60%.
+
+2000s: Slight increase to 55.69%.
+
+Low Confidence ("Hardly Any"):
+
+1970s: Approximately 22.08% of respondents reported low confidence.
+
+1980s: The proportion increased slightly to 23.12%.
+
+1990s: Significant increase to 36.34%.
+
+2000s: Slight decrease to 32.69%.
+
+Key Observations:
+Decline in High Confidence: There is a noticeable decline in the proportion of respondents with high confidence in Congress from the 1970s (15.29%) to the 1990s (10.06%), with a minor recovery in the 2000s (11.62%).
+
+Fluctuations in Moderate Confidence: Moderate confidence remained stable in the 1970s and 1980s (around 62-63%), but saw a significant decrease in the 1990s (53.60%) followed by a slight increase in the 2000s (55.69%).
+
+Increase in Low Confidence: There is a clear upward trend in the proportion of respondents with low confidence, rising from 22.08% in the 1970s to 36.34% in the 1990s, followed by a slight decrease in the 2000s (32.69%).
+
+* * *
+#### Interpretation of Bar Plots on Confidence in the Military (1970s to 2000s)
+
+The bar plots provide a visual representation of the levels of public confidence in the military over four decades: the 1970s, 1980s, 1990s, and 2000s.
+
+Confidence Levels:
+Each bar represents the proportion of respondents expressing different levels of confidence: "A Great Deal," "Only Some," and "Hardly Any."
+
+High Confidence ("A Great Deal"):
+
+1970s: Approximately 36.01% of respondents had a high level of confidence in the military.
+
+1980s: The proportion slightly decreased to 31.67%.
+
+1990s: There was a notable increase to 39.84%.
+
+2000s: Significant increase to 48.14%.
+
+Moderate Confidence ("Only Some"):
+
+1970s: Around 50.86% of respondents expressed moderate confidence.
+
+1980s: The proportion increased to 53.80%.
+
+1990s: Slight decrease to 48.35%.
+
+2000s: Further decrease to 41.51%.
+
+Low Confidence ("Hardly Any"):
+
+1970s: Approximately 13.13% of respondents reported low confidence.
+
+1980s: The proportion slightly increased to 14.52%.
+
+1990s: Decrease to 11.80%.
+
+2000s: Further decrease to 10.35%.
+
+Key Observations:
+Increase in High Confidence: There is a significant increase in the proportion of respondents with high confidence in the military from the 1970s (36.01%) to the 2000s (48.14%).
+
+Fluctuations in Moderate Confidence: Moderate confidence remained relatively stable in the 1970s and 1980s (around 50-53%), but saw a decrease in the 1990s (48.35%) and continued to decrease in the 2000s (41.51%).
+
+Decrease in Low Confidence: There is a noticeable decrease in the proportion of respondents with low confidence, falling from 13.13% in the 1970s to 10.35% in the 2000s, indicating growing trust in the military over the decades.
+
+* * *
+
+## Inference
+
+### Chi Square Test results
+
+```{r function_chi_square, message=FALSE, warning=FALSE, include=FALSE}
+# Function to perform chi-square test for a given variable
+perform_chi_square_test <- function(data, variable_name) {
+  # Create a contingency table for the given variable
+  contingency_table <- table(data$decade, data[[variable_name]])
+  
+  # Perform chi-square test
+  chi_square_result <- chisq.test(contingency_table)
+  
+  # Extract standardized residuals
+  std_residuals <- chi_square_result$stdres
+  
+  # Create a named list containing the variable name, chi-square result, and residuals
+  result_list <- list(
+    variable_name = variable_name,
+    chi_square_result = chi_square_result,
+    std_residuals = std_residuals
+  )
+  
+  return(result_list)
+}
+```
+
+```{r test_results, message=FALSE, warning=FALSE, include=FALSE}
+# Assuming combined_data is your combined dataset and you want to test "confinan" variable
+result_confinan <- perform_chi_square_test(combined_data, "confinan")
+result_conbus <- perform_chi_square_test(combined_data, "conbus")
+result_conclerg <- perform_chi_square_test(combined_data, "conclerg")
+result_coneduc <- perform_chi_square_test(combined_data, "coneduc")
+result_confed <- perform_chi_square_test(combined_data, "confed")
+result_conlabor <- perform_chi_square_test(combined_data, "conlabor")
+result_conpress <- perform_chi_square_test(combined_data, "conpress")
+result_conmedic <- perform_chi_square_test(combined_data, "conmedic")
+result_contv <- perform_chi_square_test(combined_data, "contv")
+result_conjudge <- perform_chi_square_test(combined_data, "conjudge")
+result_consci <- perform_chi_square_test(combined_data, "consci")
+result_conlegis <- perform_chi_square_test(combined_data, "conlegis")
+result_conarmy <- perform_chi_square_test(combined_data, "conarmy")
+```
+
+```{r print_test_results, echo=FALSE, message=FALSE, warning=FALSE}
+print(result_confinan)
+print(result_conbus)
+print(result_conclerg)
+print(result_coneduc)
+print(result_confed)
+print(result_conlabor)
+print(result_conpress)
+print(result_conmedic)
+print(result_contv)
+print(result_conjudge)
+print(result_consci)
+print(result_conlegis)
+print(result_conarmy)
+```
+
+### Chi Square Test results Interpretations
+
+#### Interpretation of Chi Square Test on Confidence in Banks and Financial Institutions (1970s to 2000s)
+
+Chi-Square Test Result:
+
+Chi-Square Statistic (X-squared = 586): This high value indicates a significant deviation from the expected frequencies under the null hypothesis.
+
+Degrees of Freedom (df = 6): This value is calculated based on the number of categories and decades (df = (4-1) * (3-1) = 6).
+
+P-Value (< 2.2e-16): This extremely small p-value indicates that the observed differences in proportions are highly unlikely to have occurred by chance. We can reject the null hypothesis, concluding that there is a significant association between the decade and the levels of public confidence in banks and financial institutions.
+
+Key Insights:
+1970s:
+
+A Great Deal: Significantly higher than expected (18.53). Indicates very high public confidence in banks and financial institutions during the 1970s.
+
+Only Some: Lower than expected (-7.07).
+
+Hardly Any: Significantly lower than expected (-12.52). Indicates very low public lack of confidence in banks and financial institutions during the 1970s.
+
+1980s:
+
+A Great Deal: Slightly lower than expected (-1.93).
+
+Only Some: Higher than expected (3.32). Indicates a noticeable shift towards moderate confidence in banks and financial institutions during the 1980s.
+
+Hardly Any: Slightly lower than expected (-2.14).
+
+1990s:
+
+A Great Deal: Significantly lower than expected (-14.79). Indicates a sharp decline in high public confidence in banks and financial institutions during the 1990s.
+
+Only Some: Higher than expected (2.57).
+
+Hardly Any: Significantly higher than expected (14.08). Indicates a substantial increase in lack of confidence in banks and financial institutions during the 1990s.
+
+2000s:
+
+A Great Deal: Slightly higher than expected (0.98).
+
+Only Some: Very close to expected (-0.07).
+
+Hardly Any: Slightly lower than expected (-1.07).
+
+Summary:
+The 1970s saw very high public confidence in banks and financial institutions ("A Great Deal") and low lack of confidence ("Hardly Any").
+
+The 1980s showed a moderate shift towards "Only Some" confidence.
+
+The 1990s experienced a significant decline in high confidence and an increase in lack of confidence in banks and financial institutions.
+
+The 2000s saw confidence levels closer to expected, with no extreme deviations.
+
+Summary:
+The 1970s saw very high public confidence in banks and financial institutions ("A Great Deal") and low lack of confidence ("Hardly Any").
+
+The 1980s showed a moderate shift towards "Only Some" confidence.
+
+The 1990s experienced a significant decline in high confidence and an increase in lack of confidence in banks and financial institutions.
+
+The 2000s saw confidence levels closer to expected, with no extreme deviations.
+
+These findings indicate notable changes in public confidence in banks and financial institutions across the decades, with significant patterns in each specific period.
+
+#### Interpretation of Chi Square Test on Confidence in Major Companies (1970s to 2000s)
+
+Chi-Square Test Result:
+
+Chi-Square Statistic (X-squared = 194.12): This high value indicates a significant deviation from the expected frequencies under the null hypothesis.
+
+Degrees of Freedom (df = 6): This value is calculated based on the number of categories and decades (df = (4-1) * (3-1) = 6).
+
+P-Value (< 2.2e-16): This extremely small p-value indicates that the observed differences in proportions are highly unlikely to have occurred by chance. We can reject the null hypothesis, concluding that there is a significant association between the decade and the levels of public confidence in major companies.
+
+Key Insights:
+1970s:
+
+A Great Deal: Close to expected (-0.65).
+
+Only Some: Lower than expected (-4.62).
+
+Hardly Any: Significantly higher than expected (7.35). Indicates a noticeable lack of confidence in major companies during the 1970s.
+
+1980s:
+
+A Great Deal: Significantly higher than expected (5.82). Indicates increased public confidence in major companies during the 1980s.
+
+Only Some: Very close to expected (0.14).
+
+Hardly Any: Significantly lower than expected (-7.50). Indicates a lower lack of confidence in major companies during the 1980s.
+
+1990s:
+
+A Great Deal: Higher than expected (2.23).
+
+Only Some: Higher than expected (1.62).
+
+Hardly Any: Significantly lower than expected (-5.11). Indicates decreased lack of confidence in major companies during the 1990s.
+
+2000s:
+
+A Great Deal: Significantly lower than expected (-8.46). Indicates a sharp decline in public confidence in major companies during the 2000s.
+
+Only Some: Higher than expected (2.35).
+
+Hardly Any: Significantly higher than expected (7.30). Indicates an increased lack of confidence in major companies during the 2000s.
+
+
+Summary:
+1970s: Low "Only Some" confidence and high "Hardly Any" responses, indicating a significant lack of confidence in major companies.
+
+1980s: High "A Great Deal" confidence and low "Hardly Any" responses, indicating increased confidence in major companies.
+
+1990s: Higher confidence in "A Great Deal" and "Only Some" categories, and lower "Hardly Any" responses, indicating relatively high confidence in major companies.
+
+2000s: Sharp decline in "A Great Deal" confidence and increased "Hardly Any" responses, indicating a significant lack of confidence in major companies.
+
+These findings highlight notable changes in public confidence in major companies across the decades, with significant patterns in each specific period.
+
+#### Interpretation of Chi Square Test on Confidence in Organized Religion (1970s to 2000s)
+
+
+Chi-Square Test Result:
+
+Chi-Square Statistic (X-squared = 151.41): This high value indicates a significant deviation from the expected frequencies under the null hypothesis.
+
+Degrees of Freedom (df = 6): This value is calculated based on the number of categories and decades (df = (4-1) * (3-1) = 6).
+
+P-Value (< 2.2e-16): This extremely small p-value indicates that the observed differences in proportions are highly unlikely to have occurred by chance. We can reject the null hypothesis, concluding that there is a significant association between the decade and the levels of public confidence in organized religion.
+
+Key Insights:
+1970s:
+
+A Great Deal: Significantly higher than expected (9.67). Indicates very high public confidence in organized religion during the 1970s.
+
+Only Some: Lower than expected (-3.75).
+
+Hardly Any: Significantly lower than expected (-5.98). Indicates very low public lack of confidence in organized religion during the 1970s.
+
+1980s:
+
+A Great Deal: Higher than expected (3.13). Indicates increased public confidence in organized religion during the 1980s.
+
+Only Some: Slightly lower than expected (-2.14).
+
+Hardly Any: Close to expected (-0.79).
+
+1990s:
+
+A Great Deal: Significantly lower than expected (-5.44). Indicates a decline in public confidence in organized religion during the 1990s.
+
+Only Some: Higher than expected (3.08).
+
+Hardly Any: Higher than expected (2.18).
+
+2000s:
+
+A Great Deal: Significantly lower than expected (-6.64). Indicates a continued decline in public confidence in organized religion during the 2000s.
+
+Only Some: Higher than expected (2.61).
+
+Hardly Any: Higher than expected (4.07). Indicates an increased lack of confidence in organized religion during the 2000s.
+
+Summary:
+1970s: High "A Great Deal" confidence and low "Hardly Any" responses, indicating strong public confidence in organized religion.
+
+1980s: Increased "A Great Deal" confidence, maintaining relatively high confidence in organized religion.
+
+1990s: Significant decline in "A Great Deal" confidence and increased "Hardly Any" responses, indicating a decrease in public confidence in organized religion.
+
+2000s: Continued decline in "A Great Deal" confidence and increased "Hardly Any" responses, indicating further erosion of confidence in organized religion.
+
+These findings highlight notable changes in public confidence in organized religion across the decades, with significant patterns in each specific period.
+
+
+#### Interpretation of Chi Square Test on Confidence in Education (1970s to 2000s)
+
+Chi-Square Test Result:
+
+Chi-Square Statistic (X-squared = 254.33): This high value indicates a significant deviation from the expected frequencies under the null hypothesis.
+
+Degrees of Freedom (df = 6): This value is calculated based on the number of categories and decades (df = (4-1) * (3-1) = 6).
+
+P-Value (< 2.2e-16): This extremely small p-value indicates that the observed differences in proportions are highly unlikely to have occurred by chance. We can reject the null hypothesis, concluding that there is a significant association between the decade and the levels of public confidence in education.
+
+
+Key Insights:
+1970s:
+
+A Great Deal: Significantly higher than expected (9.39). Indicates very high public confidence in education during the 1970s.
+
+Only Some: Significantly lower than expected (-6.45).
+
+Hardly Any: Lower than expected (-3.17).
+
+1980s:
+
+A Great Deal: Higher than expected (4.97). Indicates increased public confidence in education during the 1980s.
+
+Only Some: Close to expected (1.74).
+
+Hardly Any: Significantly lower than expected (-9.13). Indicates very low lack of confidence in education during the 1980s.
+
+1990s:
+
+A Great Deal: Significantly lower than expected (-9.58). Indicates a sharp decline in public confidence in education during the 1990s.
+
+Only Some: Higher than expected (2.52).
+
+Hardly Any: Significantly higher than expected (9.10). Indicates a substantial increase in lack of confidence in education during the 1990s.
+
+2000s:
+
+A Great Deal: Significantly lower than expected (-4.10). Indicates a continued decline in public confidence in education during the 2000s.
+
+Only Some: Close to expected (1.24).
+
+Hardly Any: Higher than expected (3.67).
+
+Summary:
+1970s: High "A Great Deal" confidence and low "Only Some" and "Hardly Any" responses, indicating strong public confidence in education.
+
+1980s: High "A Great Deal" confidence and very low "Hardly Any" responses, maintaining relatively high confidence in education.
+
+1990s: Significant decline in "A Great Deal" confidence and increased "Hardly Any" responses, indicating a decrease in public confidence in education.
+
+2000s: Continued decline in "A Great Deal" confidence and increased "Hardly Any" responses, indicating further erosion of confidence in education.
+
+These findings highlight notable changes in public confidence in education across the decades, with significant patterns in each specific period.
+
+
+#### Interpretation of Chi Square Test on Confidence in Executive branch of Federal Government (1970s to 2000s)
+
+Chi-Square Test Result:
+
+Chi-Square Statistic (X-squared = 302.45): This high value indicates a significant deviation from the expected frequencies under the null hypothesis.
+
+Degrees of Freedom (df = 6): This value is calculated based on the number of categories and decades (df = (4-1) * (3-1) = 6).
+
+P-Value (< 2.2e-16): This extremely small p-value indicates that the observed differences in proportions are highly unlikely to have occurred by chance. We can reject the null hypothesis, concluding that there is a significant association between the decade and the levels of public confidence in the executive branch of the federal government.
+
+
+Key Insights:
+1970s:
+
+A Great Deal: Higher than expected (2.27). Indicates higher public confidence in the executive branch of the federal government during the 1970s.
+
+Only Some: Significantly higher than expected (10.51). Indicates moderate confidence in the executive branch during the 1970s.
+
+Hardly Any: Significantly lower than expected (-13.20). Indicates very low lack of confidence in the executive branch during the 1970s.
+
+1980s:
+
+A Great Deal: Higher than expected (2.87). Indicates increased public confidence in the executive branch during the 1980s.
+
+Only Some: Higher than expected (3.26).
+
+Hardly Any: Lower than expected (-5.83).
+
+1990s:
+
+A Great Deal: Significantly lower than expected (-4.27). Indicates a decline in public confidence in the executive branch during the 1990s.
+
+Only Some: Lower than expected (-4.72).
+
+Hardly Any: Significantly higher than expected (8.53). Indicates increased lack of confidence in the executive branch during the 1990s.
+
+2000s:
+
+A Great Deal: Close to expected (-0.82).
+
+Only Some: Significantly lower than expected (-8.35). Indicates reduced moderate confidence in the executive branch during the 2000s.
+
+Hardly Any: Significantly higher than expected (9.69). Indicates increased lack of confidence in the executive branch during the 2000s.
+
+Summary:
+1970s: High "Only Some" confidence and low "Hardly Any" responses, indicating moderate public confidence in the executive branch.
+
+1980s: Higher "A Great Deal" and "Only Some" confidence, indicating increased confidence in the executive branch.
+
+1990s: Significant decline in "A Great Deal" and "Only Some" confidence and increased "Hardly Any" responses, indicating decreased public confidence in the executive branch.
+
+2000s: Increased "Hardly Any" responses and decreased "Only Some" confidence, indicating further erosion of confidence in the executive branch.
+
+These findings highlight notable changes in public confidence in the executive branch of the federal government across the decades, with significant patterns in each specific period.
+
+#### Interpretation of Chi Square Test on Confidence in Organized Labor (1970s to 2000s)
+
+Chi-Square Test Result:
+
+Chi-Square Statistic (X-squared = 79.711): This value indicates a significant deviation from the expected frequencies under the null hypothesis.
+
+Degrees of Freedom (df = 6): This value is calculated based on the number of categories and decades (df = (4-1) * (3-1) = 6).
+
+P-Value (4.099e-15): This extremely small p-value indicates that the observed differences in proportions are highly unlikely to have occurred by chance. We can reject the null hypothesis, concluding that there is a significant association between the decade and the levels of public confidence in organized labor.
+
+Key Insights:
+1970s:
+
+A Great Deal: Higher than expected (1.99). Indicates higher public confidence in organized labor during the 1970s.
+
+Only Some: Lower than expected (-2.84).
+
+Hardly Any: Higher than expected (1.66).
+
+1980s:
+
+A Great Deal: Lower than expected (-2.01).
+
+Only Some: Lower than expected (-3.15).
+
+Hardly Any: Significantly higher than expected (4.69). Indicates increased lack of confidence in organized labor during the 1980s.
+
+1990s:
+
+A Great Deal: Lower than expected (-2.13).
+
+Only Some: Close to expected (0.15).
+
+Hardly Any: Higher than expected (1.28).
+
+2000s:
+
+A Great Deal: Significantly higher than expected (2.75). Indicates increased public confidence in organized labor during the 2000s.
+
+Only Some: Significantly higher than expected (6.05). Indicates increased moderate confidence in organized labor during the 2000s.
+
+Hardly Any: Significantly lower than expected (-8.26). Indicates decreased lack of confidence in organized labor during the 2000s.
+
+Summary:
+1970s: Higher "A Great Deal" confidence and "Hardly Any" responses, indicating mixed public confidence in organized labor.
+
+1980s: Higher "Hardly Any" responses, indicating decreased public confidence in organized labor.
+
+1990s: Slightly higher "Hardly Any" responses, indicating a slight decrease in public confidence in organized labor.
+
+2000s: Higher "A Great Deal" and "Only Some" confidence, indicating increased public confidence in organized labor.
+
+These findings highlight notable changes in public confidence in organized labor across the decades, with significant patterns in each specific period.
+
+#### Interpretation of Chi Square Test on Confidence in Press (1970s to 2000s)
+
+Chi-Square Test Result:
+
+Chi-Square Statistic (X-squared = 1586.9): This very high value indicates a significant deviation from the expected frequencies under the null hypothesis.
+
+Degrees of Freedom (df = 6): This value is calculated based on the number of categories and decades (df = (4-1) * (3-1) = 6).
+
+P-Value (< 2.2e-16): This extremely small p-value indicates that the observed differences in proportions are highly unlikely to have occurred by chance. We can reject the null hypothesis, concluding that there is a significant association between the decade and the levels of public confidence in the press.
+
+
+
+Key Insights:
+1970s:
+
+A Great Deal: Significantly higher than expected (20.02). Indicates very high public confidence in the press during the 1970s.
+
+Only Some: Higher than expected (4.99).
+
+Hardly Any: Significantly lower than expected (-21.36). Indicates very low lack of confidence in the press during the 1970s.
+
+1980s:
+
+A Great Deal: Higher than expected (8.40). Indicates increased public confidence in the press during the 1980s.
+
+Only Some: Significantly higher than expected (12.09). Indicates moderate confidence in the press during the 1980s.
+
+Hardly Any: Significantly lower than expected (-19.81). Indicates low lack of confidence in the press during the 1980s.
+
+1990s:
+
+A Great Deal: Significantly lower than expected (-12.57). Indicates a decline in public confidence in the press during the 1990s.
+
+Only Some: Lower than expected (-6.14).
+
+Hardly Any: Significantly higher than expected (16.67). Indicates increased lack of confidence in the press during the 1990s.
+
+2000s:
+
+A Great Deal: Significantly lower than expected (-14.59). Indicates a further decline in public confidence in the press during the 2000s.
+
+Only Some: Significantly lower than expected (-11.89). Indicates reduced moderate confidence in the press during the 2000s.
+
+Hardly Any: Significantly higher than expected (24.52). Indicates a substantial increase in lack of confidence in the press during the 2000s.
+
+Summary:
+1970s: High "A Great Deal" and "Only Some" confidence, and low "Hardly Any" responses, indicating strong public confidence in the press.
+
+1980s: Increased "A Great Deal" and "Only Some" confidence, indicating relatively high confidence in the press.
+
+1990s: Significant decline in "A Great Deal" and "Only Some" confidence, and increased "Hardly Any" responses, indicating decreased public confidence in the press.
+
+2000s: Further decline in "A Great Deal" and "Only Some" confidence, and increased "Hardly Any" responses, indicating continued erosion of confidence in the press.
+
+These findings highlight notable changes in public confidence in the press across the decades, with significant patterns in each specific period.
+
+
+#### Interpretation of Chi Square Test on Confidence in Medicine (1970s to 2000s)
+
+Chi-Square Test Result:
+
+Chi-Square Statistic (X-squared = 284.31): This high value indicates a significant deviation from the expected frequencies under the null hypothesis.
+
+Degrees of Freedom (df = 6): This value is calculated based on the number of categories and decades (df = (4-1) * (3-1) = 6).
+
+P-Value (< 2.2e-16): This extremely small p-value indicates that the observed differences in proportions are highly unlikely to have occurred by chance. We can reject the null hypothesis, concluding that there is a significant association between the decade and the levels of public confidence in medicine.
+
+Key Insights:
+1970s:
+
+A Great Deal: Significantly higher than expected (8.04). Indicates very high public confidence in medicine during the 1970s.
+
+Only Some: Significantly lower than expected (-6.93).
+
+Hardly Any: Slightly lower than expected (-2.05).
+
+1980s:
+
+A Great Deal: Significantly higher than expected (8.85). Indicates increased public confidence in medicine during the 1980s.
+
+Only Some: Significantly lower than expected (-4.80).
+
+Hardly Any: Significantly lower than expected (-7.44). Indicates very low lack of confidence in medicine during the 1980s.
+
+1990s:
+
+A Great Deal: Significantly lower than expected (-5.26). Indicates a decline in public confidence in medicine during the 1990s.
+
+Only Some: Higher than expected (4.68).
+
+Hardly Any: Close to expected (1.06).
+
+2000s:
+
+A Great Deal: Significantly lower than expected (-11.91). Indicates a further decline in public confidence in medicine during the 2000s.
+
+Only Some: Significantly higher than expected (6.86). Indicates increased moderate confidence in medicine during the 2000s.
+
+Hardly Any: Significantly higher than expected (9.27). Indicates increased lack of confidence in medicine during the 2000s.
+
+Summary:
+1970s: High "A Great Deal" confidence and low "Only Some" and "Hardly Any" responses, indicating strong public confidence in medicine.
+
+1980s: Increased "A Great Deal" confidence and very low "Hardly Any" responses, maintaining relatively high confidence in medicine.
+
+1990s: Significant decline in "A Great Deal" confidence and increased "Only Some" responses, indicating decreased public confidence in medicine.
+
+2000s: Further decline in "A Great Deal" confidence and increased "Only Some" and "Hardly Any" responses, indicating continued erosion of confidence in medicine.
+
+These findings highlight notable changes in public confidence in medicine across the decades, with significant patterns in each specific period.
+
+
+#### Interpretation of Chi Square Test on Confidence in Television (1970s to 2000s)
+
+Chi-Square Test Result:
+
+Chi-Square Statistic (X-squared = 602.13): This high value indicates a significant deviation from the expected frequencies under the null hypothesis.
+
+Degrees of Freedom (df = 6): This value is calculated based on the number of categories and decades (df = (4-1) * (3-1) = 6).
+
+P-Value (< 2.2e-16): This extremely small p-value indicates that the observed differences in proportions are highly unlikely to have occurred by chance. We can reject the null hypothesis, concluding that there is a significant association between the decade and the levels of public confidence in television.
+
+Key Insights:
+1970s:
+
+A Great Deal: Significantly higher than expected (11.02). Indicates very high public confidence in television during the 1970s.
+
+Only Some: Higher than expected (3.33).
+
+Hardly Any: Significantly lower than expected (-11.19). Indicates very low lack of confidence in television during the 1970s.
+
+1980s:
+
+A Great Deal: Higher than expected (3.99). Indicates increased public confidence in television during the 1980s.
+
+Only Some: Significantly higher than expected (11.14). Indicates moderate confidence in television during the 1980s.
+
+Hardly Any: Significantly lower than expected (-14.52). Indicates low lack of confidence in television during the 1980s.
+
+1990s:
+
+A Great Deal: Significantly lower than expected (-6.20). Indicates a decline in public confidence in television during the 1990s.
+
+Only Some: Lower than expected (-5.25).
+
+Hardly Any: Significantly higher than expected (9.85). Indicates increased lack of confidence in television during the 1990s.
+
+2000s:
+
+A Great Deal: Significantly lower than expected (-8.07). Indicates a further decline in public confidence in television during the 2000s.
+
+Only Some: Significantly lower than expected (-10.22). Indicates reduced moderate confidence in television during the 2000s.
+
+Hardly Any: Significantly higher than expected (16.40). Indicates a substantial increase in lack of confidence in television during the 2000s.
+
+
+
+#### Interpretation of Chi Square Test on Confidence in Supreme Court (1970s to 2000s)
+
+Chi-Square Test Result:
+
+Chi-Square Statistic (X-squared = 29.576): This value indicates a significant deviation from the expected frequencies under the null hypothesis, although it is lower compared to other variables.
+
+Degrees of Freedom (df = 6): This value is calculated based on the number of categories and decades (df = (4-1) * (3-1) = 6).
+
+P-Value (4.731e-05): This very small p-value indicates that the observed differences in proportions are highly unlikely to have occurred by chance. We can reject the null hypothesis, concluding that there is a significant association between the decade and the levels of public confidence in the Supreme Court.
+
+
+Key Insights:
+1970s:
+
+A Great Deal: Higher than expected (2.93). Indicates higher public confidence in the Supreme Court during the 1970s.
+
+Only Some: Lower than expected (-3.30).
+
+Hardly Any: Close to expected (0.78).
+
+1980s:
+
+A Great Deal: Lower than expected (-1.77).
+
+Only Some: Significantly higher than expected (4.27). Indicates moderate confidence in the Supreme Court during the 1980s.
+
+Hardly Any: Lower than expected (-3.72). Indicates decreased lack of confidence in the Supreme Court during the 1980s.
+
+1990s:
+
+A Great Deal: Close to expected (-0.17).
+
+Only Some: Lower than expected (-1.51).
+
+Hardly Any: Higher than expected (2.40).
+
+2000s:
+
+A Great Deal: Close to expected (-0.47).
+
+Only Some: Close to expected (-0.26).
+
+Hardly Any: Higher than expected (1.00).
+
+Summary:
+1970s: Higher "A Great Deal" confidence and lower "Only Some" responses, indicating strong public confidence in the Supreme Court.
+
+1980s: Higher "Only Some" confidence and lower "Hardly Any" responses, indicating moderate confidence in the Supreme Court.
+
+1990s: Slightly higher "Hardly Any" responses, indicating a slight decrease in public confidence in the Supreme Court.
+
+2000s: Confidence levels are closer to expected values, with slightly higher "Hardly Any" responses, indicating stable but slightly decreased confidence in the Supreme Court.
+
+These findings highlight changes in public confidence in the Supreme Court across the decades, with some fluctuations in each specific period.
+
+
+#### Interpretation of Chi Square Test on Confidence in Scientific Community (1970s to 2000s)
+
+Chi-Square Test Result:
+
+Chi-Square Statistic (X-squared = 7.5088): This value indicates some deviation from the expected frequencies under the null hypothesis, but it is relatively low compared to other variables.
+
+Degrees of Freedom (df = 6): This value is calculated based on the number of categories and decades (df = (4-1) * (3-1) = 6).
+
+P-Value (0.2763): This p-value is greater than the typical significance level (e.g., 0.05), indicating that the observed differences in proportions are not statistically significant. We cannot reject the null hypothesis, concluding that there is no significant association between the decade and the levels of public confidence in the scientific community.
+
+
+
+Key Insights:
+1970s:
+
+A Great Deal: Slightly higher than expected (1.05). Indicates a marginally higher public confidence in the scientific community during the 1970s.
+
+Only Some: Slightly lower than expected (-0.61).
+
+Hardly Any: Slightly lower than expected (-0.84).
+
+1980s:
+
+A Great Deal: Higher than expected (1.66). Indicates increased public confidence in the scientific community during the 1980s.
+
+Only Some: Lower than expected (-1.11).
+
+Hardly Any: Lower than expected (-1.05).
+
+1990s:
+
+A Great Deal: Lower than expected (-2.03). Indicates a slight decline in public confidence in the scientific community during the 1990s.
+
+Only Some: Higher than expected (1.27).
+
+Hardly Any: Higher than expected (1.44).
+
+2000s:
+
+A Great Deal: Close to expected (-0.70).
+
+Only Some: Close to expected (0.47).
+
+Hardly Any: Close to expected (0.44).
+
+Summary:
+1970s and 1980s: Slightly higher public confidence in the scientific community.
+
+1990s: Slight decline in "A Great Deal" confidence and slightly higher "Only Some" and "Hardly Any" responses.
+
+2000s: Confidence levels are close to expected values, indicating stable public confidence in the scientific community.
+
+Overall, the findings indicate that there are no significant changes in public confidence in the scientific community across the decades, as reflected by the non-significant chi-square test result.
+
+#### Interpretation of Chi Square Test on Confidence in Congress (1970s to 2000s)
+
+Chi-Square Test Result:
+
+Chi-Square Statistic (X-squared = 519.39): This high value indicates a significant deviation from the expected frequencies under the null hypothesis.
+
+Degrees of Freedom (df = 6): This value is calculated based on the number of categories and decades (df = (4-1) * (3-1) = 6).
+
+P-Value (< 2.2e-16): This extremely small p-value indicates that the observed differences in proportions are highly unlikely to have occurred by chance. We can reject the null hypothesis, concluding that there is a significant association between the decade and the levels of public confidence in Congress.
+
+Key Insights:
+1970s:
+
+A Great Deal: Significantly higher than expected (6.10). Indicates higher public confidence in Congress during the 1970s.
+
+Only Some: Significantly higher than expected (5.85). Indicates moderate confidence in Congress during the 1970s.
+
+Hardly Any: Significantly lower than expected (-10.86). Indicates very low lack of confidence in Congress during the 1970s.
+
+1980s:
+
+A Great Deal: Higher than expected (4.55). Indicates increased public confidence in Congress during the 1980s.
+
+Only Some: Significantly higher than expected (10.02). Indicates moderate confidence in Congress during the 1980s.
+
+Hardly Any: Significantly lower than expected (-14.27). Indicates very low lack of confidence in Congress during the 1980s.
+
+1990s:
+
+A Great Deal: Significantly lower than expected (-7.66). Indicates a decline in public confidence in Congress during the 1990s.
+
+Only Some: Significantly lower than expected (-10.55). Indicates reduced moderate confidence in Congress during the 1990s.
+
+Hardly Any: Significantly higher than expected (17.13). Indicates increased lack of confidence in Congress during the 1990s.
+
+2000s:
+
+A Great Deal: Lower than expected (-2.64).
+
+Only Some: Lower than expected (-5.60).
+
+Hardly Any: Higher than expected (8.05). Indicates increased lack of confidence in Congress during the 2000s.
+
+Summary:
+1970s: High "A Great Deal" and "Only Some" confidence, and low "Hardly Any" responses, indicating strong public confidence in Congress.
+
+1980s: Increased "A Great Deal" and "Only Some" confidence, indicating relatively high confidence in Congress.
+
+1990s: Significant decline in "A Great Deal" and "Only Some" confidence, and increased "Hardly Any" responses, indicating decreased public confidence in Congress.
+
+2000s: Further decline in "A Great Deal" and "Only Some" confidence, and increased "Hardly Any" responses, indicating continued erosion of confidence in Congress.
+
+These findings highlight notable changes in public confidence in Congress across the decades, with significant patterns in each specific period.
+
+
+
+#### Interpretation of Chi Square Test on Confidence in Military (1970s to 2000s)
+
+Chi-Square Test Result:
+
+Chi-Square Statistic (X-squared = 441.13): This high value indicates a significant deviation from the expected frequencies under the null hypothesis.
+
+Degrees of Freedom (df = 6): This value is calculated based on the number of categories and decades (df = (4-1) * (3-1) = 6).
+
+P-Value (< 2.2e-16): This extremely small p-value indicates that the observed differences in proportions are highly unlikely to have occurred by chance. We can reject the null hypothesis, concluding that there is a significant association between the decade and the levels of public confidence in the military.
+
+
+Key Insights:
+1970s:
+
+A Great Deal: Lower than expected (-3.44).
+
+Only Some: Higher than expected (2.60). Indicates moderate public confidence in the military during the 1970s.
+
+Hardly Any: Slightly higher than expected (1.11).
+
+1980s:
+
+A Great Deal: Significantly lower than expected (-15.98). Indicates a substantial decrease in public confidence in the military during the 1980s.
+
+Only Some: Significantly higher than expected (11.07). Indicates moderate confidence in the military during the 1980s.
+
+Hardly Any: Significantly higher than expected (6.71). Indicates increased lack of confidence in the military during the 1980s.
+
+1990s:
+
+A Great Deal: Higher than expected (3.34). Indicates increased public confidence in the military during the 1990s.
+
+Only Some: Lower than expected (-1.58).
+
+Hardly Any: Lower than expected (-2.50).
+
+2000s:
+
+A Great Deal: Significantly higher than expected (17.90). Indicates a substantial increase in public confidence in the military during the 2000s.
+
+Only Some: Significantly lower than expected (-13.38). Indicates reduced moderate confidence in the military during the 2000s.
+
+Hardly Any: Significantly lower than expected (-6.04). Indicates decreased lack of confidence in the military during the 2000s.
+
+Summary:
+1970s: Moderate "Only Some" confidence and slightly higher "Hardly Any" responses, indicating mixed public confidence in the military.
+
+1980s: Significant decrease in "A Great Deal" confidence and increased "Only Some" and "Hardly Any" responses, indicating decreased public confidence in the military.
+
+1990s: Higher "A Great Deal" confidence, indicating increased confidence in the military.
+
+2000s: Significant increase in "A Great Deal" confidence and lower "Only Some" and "Hardly Any" responses, indicating strong public confidence in the military.
+
+These findings highlight notable changes in public confidence in the military across the decades, with significant patterns in each specific period.
+
+## Final Conclusion
+
+General Trends:
+1970s: Generally, high confidence in many sectors, with significantly higher than expected "A Great Deal" confidence in institutions such as banks, education, and the press. There were also low "Hardly Any" confidence responses in these sectors, indicating strong public trust.
+
+1980s: Continued high confidence in sectors like organized religion and education. There was an increase in "Only Some" confidence, suggesting a shift towards moderate trust. Confidence in the military and congress saw mixed trends.
+
+1990s: A noticeable decline in "A Great Deal" confidence across many sectors, with increased "Hardly Any" responses. This suggests a growing lack of trust in institutions such as the press, Congress, and education.
+
+2000s: Further decline in "A Great Deal" confidence in several sectors, including the press, Congress, and medicine. There was a significant increase in "Hardly Any" responses, indicating a substantial erosion of public trust.
+
+Sector-Specific Observations:
+Banks and Financial Institutions: High confidence in the 1970s, sharp decline in the 1990s, and a slight improvement in the 2000s.
+
+Major Companies: Mixed trends with higher confidence in the 1980s and 1990s, but a sharp decline in the 2000s.
+
+Organized Religion: High confidence in the 1970s and 1980s, with a noticeable decline in the 1990s and 2000s.
+
+Education: Strong confidence in the 1970s and 1980s, followed by a significant decline in the 1990s and 2000s.
+
+Executive Branch of the Federal Government: Moderate confidence in the 1970s and 1980s, with a sharp decline in the 1990s and 2000s.
+
+Organized Labor: Fluctuating confidence, with high confidence in the 2000s.
+
+Press: High confidence in the 1970s and 1980s, followed by a substantial decline in the 1990s and 2000s.
+
+Medicine: High confidence in the 1970s and 1980s, with a decline in the 1990s and 2000s.
+
+Television: High confidence in the 1970s and 1980s, with a significant decline in the 1990s and 2000s.
+
+Supreme Court: Generally stable confidence, with slight fluctuations.
+
+Scientific Community: No significant changes, indicating stable confidence.
+
+Congress: High confidence in the 1970s and 1980s, followed by a sharp decline in the 1990s and 2000s.
+
+Military: Mixed trends, with a significant increase in confidence in the 2000s.
+
+Overall Conclusion:
+Public confidence in various sectors has experienced significant changes over the decades, with high trust levels in the 1970s and 1980s, followed by a noticeable decline in the 1990s and 2000s. The increasing "Hardly Any" responses in recent decades indicate a growing lack of trust in many institutions. However, some sectors, such as the military, have seen a resurgence in public confidence in the 2000s.
+
+These findings highlight the dynamic nature of public trust and the need for institutions to continuously build and maintain confidence among the public.
+
